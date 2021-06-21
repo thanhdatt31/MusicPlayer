@@ -17,6 +17,7 @@ object Constants {
     const val ACTION_START = 4
     const val ACTION_NEXT = 5
     const val ACTION_PREVIOUS = 6
+    const val ACTION_STOP = 7
     const val ACTION_FROM_ACTIVITY = "ACTION_FROM_ACTIVITY"
     const val SEND_ACTION_FROM_NOTIFICATION = "SEND_ACTION_FROM_NOTIFICATION"
     const val SEND_POSITION = "SEND_POSITION_TO_FRAGMENT"

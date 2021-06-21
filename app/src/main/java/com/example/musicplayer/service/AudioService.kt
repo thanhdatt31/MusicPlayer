@@ -28,6 +28,7 @@ import com.example.musicplayer.helper.Constants.ACTION_PAUSE
 import com.example.musicplayer.helper.Constants.ACTION_PREVIOUS
 import com.example.musicplayer.helper.Constants.ACTION_RESUME
 import com.example.musicplayer.helper.Constants.ACTION_START
+import com.example.musicplayer.helper.Constants.ACTION_STOP
 import com.example.musicplayer.helper.Constants.CHANNEL_ID
 import com.example.musicplayer.helper.Constants.MUSIC_NOTIFICATION_ID
 import com.example.musicplayer.helper.Constants.REPEAT_ALL
@@ -164,7 +165,6 @@ class AudioService : Service(), MediaPlayer.OnCompletionListener {
         showNotification(audioPosition)
         sendDataToActivity(ACTION_RESUME)
         saveIsPlaying(ACTION_RESUME)
-//        sendDataToFragment(ACTION_RESUME)
     }
 
     private fun pauseMusic() {
@@ -278,7 +278,11 @@ class AudioService : Service(), MediaPlayer.OnCompletionListener {
     private fun sendDataToActivity(action: Int) {
         val intent = Intent("send_data_to_activity")
         val bundle = Bundle()
-        bundle.putParcelable("audio", audioList[audioPosition])
+        if (audioPosition > audioList.size - 1) {
+            bundle.putParcelable("audio", audioList[0])
+        } else {
+            bundle.putParcelable("audio", audioList[audioPosition])
+        }
         bundle.putBoolean("status_player", musicPlayer.isPlaying)
         bundle.putInt("action", action)
         intent.putExtras(bundle)
@@ -321,6 +325,7 @@ class AudioService : Service(), MediaPlayer.OnCompletionListener {
                             ACTION_RESUME -> resumeMusic()
                             ACTION_NEXT -> nextMusic()
                             ACTION_PREVIOUS -> previousMusic()
+                            ACTION_STOP -> stopMusic()
                         }
                     }
                     "progress_from_activity" -> {
@@ -332,6 +337,13 @@ class AudioService : Service(), MediaPlayer.OnCompletionListener {
                 }
             }
         }
+    }
+
+    private fun stopMusic() {
+        if (this::job.isInitialized) {
+            job.cancel()
+        }
+        musicPlayer.stop()
     }
 
     private fun previousMusic() {
@@ -364,8 +376,13 @@ class AudioService : Service(), MediaPlayer.OnCompletionListener {
             } else {
                 audioPosition += 1
             }
-            initMusic(audioPosition)
-            showNotification(audioPosition)
+            if (audioPosition > audioList.size - 1) {
+                sendDataToActivity(ACTION_STOP)
+            } else {
+                initMusic(audioPosition)
+                showNotification(audioPosition)
+            }
+
         }
 
     }
@@ -382,13 +399,11 @@ class AudioService : Service(), MediaPlayer.OnCompletionListener {
                     } else {
                         audioPosition += 1
                     }
-                    if (audioPosition < audioList.size) {
+                    if (audioPosition < audioList.size - 1) {
                         initMusic(audioPosition)
                         showNotification(audioPosition)
                     } else {
-                        mp.stop()
-                        audioPosition = 0
-                        sendDataToActivity(ACTION_PAUSE)
+                        sendDataToActivity(ACTION_STOP)
                     }
                 }
                 REPEAT_ONE -> {

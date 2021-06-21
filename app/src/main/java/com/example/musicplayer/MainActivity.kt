@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
@@ -27,6 +28,7 @@ import com.example.musicplayer.helper.Constants.ACTION_PAUSE
 import com.example.musicplayer.helper.Constants.ACTION_PREVIOUS
 import com.example.musicplayer.helper.Constants.ACTION_RESUME
 import com.example.musicplayer.helper.Constants.ACTION_START
+import com.example.musicplayer.helper.Constants.ACTION_STOP
 import com.example.musicplayer.helper.Constants.READ_STORAGE_REQUEST_CODE
 import com.example.musicplayer.helper.Constants.REPEAT_ALL
 import com.example.musicplayer.helper.Constants.REPEAT_OFF
@@ -46,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mAudio: Audio
     private var isClicked = false
     private var isRepeat = REPEAT_OFF
+    private var handler: Handler = Handler()
     private lateinit var storagePermission: Array<String>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         when (int) {
             ACTION_START -> {
                 binding.viewMini.visibility = View.VISIBLE
-                setStatusPauseOrResume(isPlaying)
+                setStatusPauseOrResume(ACTION_START)
                 binding.viewMini.visibility = View.VISIBLE
                 binding.tvSongTitle.text = audio.name
                 binding.tvArtistTitle.text = audio.artist
@@ -116,13 +119,18 @@ class MainActivity : AppCompatActivity() {
 
             }
             ACTION_PAUSE -> {
-                setStatusPauseOrResume(false)
+//                setStatusPauseOrResume(false)
+                setStatusPauseOrResume(ACTION_PAUSE)
             }
             ACTION_RESUME -> {
-                setStatusPauseOrResume(true)
+//                setStatusPauseOrResume(true)
+                setStatusPauseOrResume(ACTION_RESUME)
             }
             ACTION_CLEAR -> {
                 binding.viewMini.visibility = View.GONE
+            }
+            ACTION_STOP -> {
+                setStatusPauseOrResume(ACTION_STOP)
             }
         }
 
@@ -134,7 +142,8 @@ class MainActivity : AppCompatActivity() {
                 Constants.durationConverter(currentPosition.toLong())
         }
         seekBarSetUp()
-        Handler().postDelayed(runnable, 950)
+
+        handler.postDelayed(runnable, 950)
     }
 
     private fun seekBarSetUp() {
@@ -174,20 +183,26 @@ class MainActivity : AppCompatActivity() {
 
     private var runnable = Runnable { updateSeekBar() }
 
-    private fun setStatusPauseOrResume(playing: Boolean) {
-        when (playing) {
-            true -> {
+    private fun setStatusPauseOrResume(action: Int) {
+        when (action) {
+            ACTION_PAUSE -> {
+                binding.btnPause.visibility = View.INVISIBLE
+                binding.btnPlay.visibility = View.VISIBLE
+                binding.btnPlay.setOnClickListener {
+                    sendActionToService(ACTION_RESUME)
+                }
+            }
+            ACTION_START, ACTION_RESUME -> {
                 binding.btnPause.visibility = View.VISIBLE
                 binding.btnPause.setOnClickListener {
                     sendActionToService(ACTION_PAUSE)
                 }
                 binding.btnPlay.visibility = View.INVISIBLE
             }
-            false -> {
+            ACTION_STOP ->{
                 binding.btnPause.visibility = View.INVISIBLE
                 binding.btnPlay.visibility = View.VISIBLE
                 binding.btnPlay.setOnClickListener {
-                    sendActionToService(ACTION_RESUME)
                 }
             }
         }
@@ -213,7 +228,7 @@ class MainActivity : AppCompatActivity() {
                                 bundle.getBoolean("status_player"),
                                 bundle.getParcelable("audio")!!
                             )
-
+                            Log.d("datnt", bundle.getInt("action").toString())
                         }
                     }
                     SEND_POSITION -> {
@@ -231,7 +246,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleLayoutFullMusic(int: Int, isPlaying: Boolean, audio: Audio) {
         when (int) {
             ACTION_START -> {
-                setStatusPauseOrResumeFull(isPlaying)
+                setStatusPauseOrResumeFull(ACTION_START)
                 binding.imgAlbumFull.setImageBitmap(
                     getAlbumBitmap(
                         this,
@@ -305,10 +320,19 @@ class MainActivity : AppCompatActivity() {
             }
 
             ACTION_PAUSE -> {
-                setStatusPauseOrResumeFull(false)
+//                setStatusPauseOrResumeFull(false)
+                setStatusPauseOrResumeFull(ACTION_PAUSE)
             }
             ACTION_RESUME -> {
-                setStatusPauseOrResumeFull(true)
+//                setStatusPauseOrResumeFull(true)
+                setStatusPauseOrResumeFull(ACTION_RESUME)
+                Log.d("datnt", "handleLayoutFullMusic: ")
+            }
+            ACTION_STOP -> {
+                handler.removeCallbacks(runnable)
+                binding.btnPlayPause.setImageResource(R.drawable.ic_baseline_play_circle_outline_24_white)
+                binding.btnPlayPause.setOnClickListener {
+                }
             }
         }
     }
@@ -327,18 +351,18 @@ class MainActivity : AppCompatActivity() {
         editor.apply()
     }
 
-    private fun setStatusPauseOrResumeFull(playing: Boolean) {
-        when (playing) {
-            true -> {
-                binding.btnPlayPause.setImageResource(R.drawable.ic_baseline_pause_circle_outline_24_white)
-                binding.btnPlayPause.setOnClickListener {
-                    sendActionToService(ACTION_PAUSE)
-                }
-            }
-            false -> {
+    private fun setStatusPauseOrResumeFull(action: Int) {
+        when (action) {
+            ACTION_PAUSE -> {
                 binding.btnPlayPause.setImageResource(R.drawable.ic_baseline_play_circle_outline_24_white)
                 binding.btnPlayPause.setOnClickListener {
                     sendActionToService(ACTION_RESUME)
+                }
+            }
+            ACTION_RESUME, ACTION_START -> {
+                binding.btnPlayPause.setImageResource(R.drawable.ic_baseline_pause_circle_outline_24_white)
+                binding.btnPlayPause.setOnClickListener {
+                    sendActionToService(ACTION_PAUSE)
                 }
             }
         }
