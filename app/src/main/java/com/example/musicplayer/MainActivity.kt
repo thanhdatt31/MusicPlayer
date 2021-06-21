@@ -215,6 +215,9 @@ class MainActivity : AppCompatActivity() {
                     "send_data_to_activity" -> {
                         val bundle = intent.extras
                         if (bundle != null) {
+                            if (bundle.getInt("action") == ACTION_STOP) {
+                                handler.removeCallbacksAndMessages(runnable)
+                            }
                             mAudio = bundle.getParcelable("audio")!!
                             binding.tvDuration.text =
                                 Constants.durationConverter(mAudio.duration.toLong())
@@ -228,7 +231,7 @@ class MainActivity : AppCompatActivity() {
                                 bundle.getBoolean("status_player"),
                                 bundle.getParcelable("audio")!!
                             )
-                            Log.d("datnt", bundle.getInt("action").toString())
+
                         }
                     }
                     SEND_POSITION -> {
@@ -333,6 +336,11 @@ class MainActivity : AppCompatActivity() {
                 binding.btnPlayPause.setImageResource(R.drawable.ic_baseline_play_circle_outline_24_white)
                 binding.btnPlayPause.setOnClickListener {
                 }
+            }
+            ACTION_CLEAR -> {
+                binding.constraintLayout.visibility = View.VISIBLE
+                binding.viewFull.visibility = View.GONE
+
             }
         }
     }

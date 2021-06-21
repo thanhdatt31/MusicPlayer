@@ -279,7 +279,7 @@ class AudioService : Service(), MediaPlayer.OnCompletionListener {
         val intent = Intent("send_data_to_activity")
         val bundle = Bundle()
         if (audioPosition > audioList.size - 1) {
-            bundle.putParcelable("audio", audioList[0])
+            bundle.putParcelable("audio", audioList[audioList.size - 1])
         } else {
             bundle.putParcelable("audio", audioList[audioPosition])
         }
